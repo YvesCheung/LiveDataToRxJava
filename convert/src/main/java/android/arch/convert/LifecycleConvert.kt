@@ -8,9 +8,9 @@ import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.LifecycleOwner
 import io.reactivex.*
 import io.reactivex.android.MainThreadDisposable
-import io.reactivex.disposables.Disposable
 import io.reactivex.functions.Predicate
 import org.reactivestreams.Publisher
+import java.util.concurrent.CancellationException
 
 /**
  * Created by 张宇 on 2018/3/13.
@@ -62,101 +62,30 @@ object LifecycleConvert {
             CompletableTransformer {
 
         private val inactive = observable.filter { observable.checkInActive() }
-        private val active = Predicate<T> { observable.shouldBeActive() }
+        private val active = observable.shouldBeActive()
 
         override fun apply(upstream: Observable<T>): ObservableSource<T> {
-            return upstream.filter(active).takeUntil(inactive)
+            return upstream.filter { active }.takeUntil(inactive)
         }
 
         override fun apply(upstream: Flowable<T>): Publisher<T> {
-            return upstream.filter(active).takeUntil(inactive.toFlowable(BackpressureStrategy.LATEST))
+            return upstream.filter { active }.takeUntil(inactive.toFlowable(BackpressureStrategy.LATEST))
         }
 
         override fun apply(upstream: Single<T>): SingleSource<T> {
-            return upstream.filterOrNever(active).takeUntil(inactive.firstOrError())
+            return upstream.filterOrNever(Predicate { active }).takeUntil(inactive.firstOrError())
         }
 
         override fun apply(upstream: Maybe<T>): MaybeSource<T> {
-            return upstream.filter(active).takeUntil(inactive.firstElement())
+            return upstream.filter { active }.takeUntil(inactive.firstElement())
         }
 
         override fun apply(upstream: Completable): CompletableSource {
-            return Completable.create { emitter ->
-
-                var upstreamDisposable: Disposable? = null
-                var lifecycleDisposable: Disposable? = null
-
-                upstreamDisposable = upstream.subscribe({
-                    if (observable.shouldBeActive()) {
-                        if (lifecycleDisposable?.isDisposed == false) {
-                            lifecycleDisposable?.dispose()
-                        }
-                        emitter.onComplete()
-                    }
-                }, {
-                    if (observable.shouldBeActive()) {
-                        if (lifecycleDisposable?.isDisposed == false) {
-                            lifecycleDisposable?.dispose()
-                        }
-                        emitter.onError(it)
-                    }
-                })
-
-                lifecycleDisposable = inactive.subscribe {
-                    if (upstreamDisposable?.isDisposed == false) {
-                        upstreamDisposable?.dispose()
-                    }
-                }
-
-                emitter.setCancellable {
-                    if (upstreamDisposable?.isDisposed == false) {
-                        upstreamDisposable?.dispose()
-                    }
-                    if (lifecycleDisposable?.isDisposed == false) {
-                        lifecycleDisposable?.dispose()
-                    }
-                }
+            val completableAfterActive = observable.filter { active }.flatMapCompletable { upstream }
+            val completableBeforeInactive = inactive.flatMapCompletable {
+                Completable.error(CancellationException())
             }
-        }
-
-        inner class ActiveCompletable(val upstream: Completable) : Completable() {
-
-            var upstreamDisposable: Disposable? = null
-            var lifecycleDisposable: Disposable? = null
-
-            override fun subscribeActual(emitter: CompletableObserver) {
-
-                upstreamDisposable = upstream.subscribe({
-                    if (observable.shouldBeActive()) {
-                        if (lifecycleDisposable?.isDisposed == false) {
-                            lifecycleDisposable?.dispose()
-                        }
-                        emitter.onComplete()
-                    }
-                }, {
-                    if (observable.shouldBeActive()) {
-                        if (lifecycleDisposable?.isDisposed == false) {
-                            lifecycleDisposable?.dispose()
-                        }
-                        emitter.onError(it)
-                    }
-                })
-
-                lifecycleDisposable = inactive.subscribe {
-                    if (upstreamDisposable?.isDisposed == false) {
-                        upstreamDisposable?.dispose()
-                    }
-                }
-
-                emitter.onSubscribe(object : Disposable {
-                    override fun isDisposed(): Boolean {
-
-                    }
-
-                    override fun dispose() {
-                    }
-                })
-            }
+            return Completable.ambArray(completableAfterActive, completableBeforeInactive)
         }
 
         override fun equals(other: Any?): Boolean {
