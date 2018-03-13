@@ -1,7 +1,6 @@
 package android.arch.convertrxjava
 
 import android.arch.convert.asObservable
-import android.arch.convert.bind
 import android.arch.convert.bindLifecycle
 import android.arch.lifecycle.LifecycleOwner
 import android.arch.lifecycle.MutableLiveData
@@ -9,7 +8,6 @@ import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import io.reactivex.Completable
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,7 +21,7 @@ class MainActivity : AppCompatActivity() {
         observable.subscribe {
             Log.i("zycheck", "onNext $it")
         }
-        livedata.observeForever(Observer<String> { s ->
+        livedata.observe(this, Observer { s ->
             Log.i("zycheck", "onChange $s")
         })
     }
@@ -59,6 +57,7 @@ class MyLiveData : MutableLiveData<String>() {
     override fun observe(owner: LifecycleOwner, observer: Observer<String>) {
         super.observe(owner, observer)
     }
+
     override fun onActive() {
         super.onActive()
         Log.i("zycheck", "onActive")
@@ -67,6 +66,5 @@ class MyLiveData : MutableLiveData<String>() {
     override fun onInactive() {
         super.onInactive()
         Log.i("zycheck", "onInActive")
-
     }
 }

@@ -49,7 +49,7 @@ object LifecycleConvert {
 
         fun checkInActive() = owner.lifecycle.currentState == Lifecycle.State.DESTROYED
 
-        fun shouldBeActive() = owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+        fun shouldBeActive() = owner.lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)
 
         fun isAttachedTo(owner: LifecycleOwner) = this.owner === owner
     }
@@ -61,8 +61,8 @@ object LifecycleConvert {
             MaybeTransformer<T, T>,
             CompletableTransformer {
 
-        private val inactive = observable.filter { observable.checkInActive() }
-        private val active = observable.shouldBeActive()
+        private val inactive = observable.filter { it == Lifecycle.Event.ON_STOP }
+        private val active get() = observable.shouldBeActive()
 
         override fun apply(upstream: Observable<T>): ObservableSource<T> {
             return upstream.filter { active }.takeUntil(inactive)
