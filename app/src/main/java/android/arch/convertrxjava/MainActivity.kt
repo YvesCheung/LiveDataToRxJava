@@ -6,6 +6,8 @@ import android.arch.lifecycle.Observer
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import io.reactivex.functions.Action
+import io.reactivex.functions.Consumer
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,34 +20,15 @@ class MainActivity : AppCompatActivity() {
         val flowable = liveData.toFlowableAllowNull("null").bindLifecycle(this).map { "flowable-$it" }
         val completable = liveData.toCompletable().bindLifecycle(this)
 
-        liveData.observe(this, Observer { s ->
-            Log.i(TAG, "onChange $s")
-        })
-        observable.subscribe({ it ->
-            Log.i(TAG, it)
-        }, {
-            Log.e(TAG, "$it")
-        })
-        single.subscribe({ it ->
-            Log.i(TAG, it)
-        }, {
-            Log.e(TAG, "$it")
-        })
-        maybe.subscribe({ it ->
-            Log.i(TAG, it)
-        }, {
-            Log.e(TAG, "$it")
-        })
-        flowable.subscribe({ it ->
-            Log.i(TAG, it)
-        }, {
-            Log.e(TAG, "$it")
-        })
-        completable.subscribe({
-            Log.i(TAG, "its complete")
-        }, {
-            Log.e(TAG, "$it")
-        })
+        val onSucess = Consumer<String> { s -> Log.i(TAG, s) }
+        val onError = Consumer<Throwable> { e -> Log.i(TAG, "$e") }
+
+        liveData.observe(this, Observer { Log.i(TAG, "onChange $it") })
+        observable.subscribe(onSucess, onError)
+        single.subscribe(onSucess, onError)
+        maybe.subscribe(onSucess, onError)
+        flowable.subscribe(onSucess, onError)
+        completable.subscribe(Action { Log.i(TAG, "its complete") }, onError)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

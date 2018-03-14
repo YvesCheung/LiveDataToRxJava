@@ -19,6 +19,34 @@ import java.util.concurrent.CancellationException
 object LifecycleConvert {
 
     @JvmStatic
+    fun <T> bindLifecycle(observer: Observable<T>, owner: LifecycleOwner): Observable<T> =
+            observer.compose(LifecycleConvert.bind(owner))
+
+    @JvmStatic
+    fun <T> bindLifecycle(single: Single<T>, owner: LifecycleOwner): Maybe<T> =
+            single.toMaybe().compose(LifecycleConvert.bind(owner))
+
+    @JvmStatic
+    fun <T> bindLifecycleWithError(single: Single<T>, owner: LifecycleOwner): Single<T> =
+            single.compose(LifecycleConvert.bind(owner))
+
+    @JvmStatic
+    fun <T> bindLifecycle(maybe: Maybe<T>, owner: LifecycleOwner): Maybe<T> =
+            maybe.compose(LifecycleConvert.bind(owner))
+
+    @JvmStatic
+    fun <T> bindLifecycle(flowable: Flowable<T>, owner: LifecycleOwner): Flowable<T> =
+            flowable.compose(LifecycleConvert.bind(owner))
+
+    @JvmStatic
+    fun bindLifecycle(completable: Completable, owner: LifecycleOwner): Completable =
+            completable.bindLifecycleWithError(owner).onErrorComplete { it is CancellationException }
+
+    @JvmStatic
+    fun bindLifecycleWithError(completable: Completable, owner: LifecycleOwner): Completable =
+            completable.compose(LifecycleConvert.bind<Nothing>(owner))
+
+    @JvmStatic
     fun <T> bind(owner: LifecycleOwner): LifecycleTransformer<T> =
             LifecycleTransformer(LifecycleObservable(owner))
 
