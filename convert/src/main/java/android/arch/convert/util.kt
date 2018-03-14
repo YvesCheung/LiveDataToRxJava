@@ -17,3 +17,5 @@ internal fun checkMainThread(observer: io.reactivex.Observer<*>): Boolean {
     }
     return true
 }
+
+class ReactiveStreamNullElementException(detail: String) : NullPointerException(detail)

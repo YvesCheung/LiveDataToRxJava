@@ -22,6 +22,7 @@ private class SingleFilterSingle<T>(
         private val source: SingleSource<T>,
         private val predicate: Predicate<in T>
 ) : Single<T>() {
+
     override fun subscribeActual(observer: SingleObserver<in T>) {
         source.subscribe(FilterSingleObserver(observer, predicate))
     }
@@ -31,16 +32,16 @@ private class SingleFilterSingle<T>(
             val predicate: Predicate<in T>
     ) : SingleObserver<T>, Disposable {
 
-        lateinit var d: Disposable
+        var d: Disposable? = null
 
         override fun dispose() {
             val d = this.d
             this.d = DisposableHelper.DISPOSED
-            d.dispose()
+            d?.dispose()
         }
 
         override fun isDisposed(): Boolean {
-            return d.isDisposed
+            return d?.isDisposed != false
         }
 
         override fun onSubscribe(d: Disposable) {
@@ -63,10 +64,8 @@ private class SingleFilterSingle<T>(
 
             if (b) {
                 actual.onSuccess(value)
-            } else {
-                d.dispose()
-                //Single.never()
             }
+            //else will be Single.never()
         }
 
         override fun onError(e: Throwable) {

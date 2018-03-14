@@ -1,8 +1,6 @@
 package android.arch.convertrxjava
 
-import android.arch.convert.asObservable
-import android.arch.convert.bindLifecycle
-import android.arch.lifecycle.LifecycleOwner
+import android.arch.convert.*
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.Observer
 import android.os.Bundle
@@ -11,60 +9,92 @@ import android.util.Log
 
 class MainActivity : AppCompatActivity() {
 
-    val livedata = MyLiveData()
+    private val liveData = MyLiveData()
+
+    init {
+        val observable = liveData.toObservable().bindLifecycle(this).map { "observable-$it" }
+        val single = liveData.toSingle().bindLifecycle(this).map { "single-$it" }
+        val maybe = liveData.toMaybe().bindLifecycle(this).map { "maybe-$it" }
+        val flowable = liveData.toFlowableAllowNull("null").bindLifecycle(this).map { "flowable-$it" }
+        val completable = liveData.toCompletable().bindLifecycle(this)
+
+        liveData.observe(this, Observer { s ->
+            Log.i(TAG, "onChange $s")
+        })
+        observable.subscribe({ it ->
+            Log.i(TAG, it)
+        }, {
+            Log.e(TAG, "$it")
+        })
+        single.subscribe({ it ->
+            Log.i(TAG, it)
+        }, {
+            Log.e(TAG, "$it")
+        })
+        maybe.subscribe({ it ->
+            Log.i(TAG, it)
+        }, {
+            Log.e(TAG, "$it")
+        })
+        flowable.subscribe({ it ->
+            Log.i(TAG, it)
+        }, {
+            Log.e(TAG, "$it")
+        })
+        completable.subscribe({
+            Log.i(TAG, "its complete")
+        }, {
+            Log.e(TAG, "$it")
+        })
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        livedata.value = "onCreate"
-        val observable = livedata.asObservable().bindLifecycle(this)
-        observable.subscribe {
-            Log.i("zycheck", "onNext $it")
-        }
-        livedata.observe(this, Observer { s ->
-            Log.i("zycheck", "onChange $s")
-        })
+    }
+
+    override fun onPostCreate(savedInstanceState: Bundle?) {
+        super.onPostCreate(savedInstanceState)
+        liveData.value = "onPostCreate"
     }
 
     override fun onStart() {
         super.onStart()
-        livedata.value = "onStart"
+        liveData.value = "onStart"
     }
 
     override fun onResume() {
         super.onResume()
-        livedata.value = "onResume"
+        liveData.value = "onResume"
     }
 
     override fun onPause() {
+        liveData.value = "onPause"
         super.onPause()
-        livedata.value = "onPause"
     }
 
     override fun onStop() {
-        livedata.value = "onStop"
+        liveData.value = "onStop"
         super.onStop()
     }
 
     override fun onDestroy() {
-        livedata.value = "onDestroy"
+        liveData.value = "onDestroy"
         super.onDestroy()
     }
 }
 
 class MyLiveData : MutableLiveData<String>() {
 
-    override fun observe(owner: LifecycleOwner, observer: Observer<String>) {
-        super.observe(owner, observer)
-    }
-
     override fun onActive() {
         super.onActive()
-        Log.i("zycheck", "onActive")
+        Log.i(TAG, "onActive")
     }
 
     override fun onInactive() {
         super.onInactive()
-        Log.i("zycheck", "onInActive")
+        Log.i(TAG, "onInActive")
     }
 }
+
+private const val TAG = "LiveDataToRxJava"

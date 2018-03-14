@@ -1,11 +1,11 @@
+@file:Suppress("unused")
+
 package android.arch.convert
 
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.Observer
-import android.os.Looper
-import io.reactivex.Observable
+import io.reactivex.*
 import io.reactivex.android.MainThreadDisposable
-import io.reactivex.disposables.Disposables
 
 /**
  * Created by 张宇 on 2018/3/12.
@@ -15,15 +15,54 @@ import io.reactivex.disposables.Disposables
 object RxJavaConvert {
 
     @JvmStatic
-    fun <T> asObservable(liveData: LiveData<T>): Observable<T> {
+    fun <T> toObservable(liveData: LiveData<T>): Observable<T> {
         return LiveDataObservable(liveData)
     }
 
     @JvmStatic
-    fun <T> asObservableAllowNull(liveData: LiveData<T>, valueIfNull: T): Observable<T> {
+    fun <T> toObservableAllowNull(liveData: LiveData<T>, valueIfNull: T): Observable<T> {
         return LiveDataObservable(liveData, valueIfNull)
     }
 
+    @JvmStatic
+    fun <T> toFlowable(liveData: LiveData<T>): Flowable<T> {
+        return LiveDataObservable(liveData).toFlowable(BackpressureStrategy.LATEST)
+    }
+
+    @JvmStatic
+    fun <T> toFlowableAllowNull(liveData: LiveData<T>, valueIfNull: T): Flowable<T> {
+        return LiveDataObservable(liveData, valueIfNull).toFlowable(BackpressureStrategy.LATEST)
+    }
+
+    @JvmStatic
+    fun <T> toSingle(liveData: LiveData<T>): Single<T> {
+        return LiveDataObservable(liveData).firstOrError()
+    }
+
+    @JvmStatic
+    fun <T> toSingleAllowNull(liveData: LiveData<T>, valueIfNull: T): Single<T> {
+        return LiveDataObservable(liveData, valueIfNull).firstOrError()
+    }
+
+    @JvmStatic
+    fun <T> toMaybe(liveData: LiveData<T>): Maybe<T> {
+        return LiveDataObservable(liveData).firstElement()
+    }
+
+    @JvmStatic
+    fun <T> toMaybeAllowNull(liveData: LiveData<T>, valueIfNull: T): Maybe<T> {
+        return LiveDataObservable(liveData, valueIfNull).firstElement()
+    }
+
+    @JvmStatic
+    fun <T> toCompletable(liveData: LiveData<T>): Completable {
+        return LiveDataCompletable(liveData)
+    }
+
+    @JvmStatic
+    fun <T> toCompletableAllowNull(liveData: LiveData<T>): Completable {
+        return LiveDataCompletable(liveData, true)
+    }
 }
 
 private class LiveDataObservable<T>(
@@ -40,7 +79,7 @@ private class LiveDataObservable<T>(
         liveData.observeForever(relay)
     }
 
-    inner class RemoveObserverInMainThread(private val observer: io.reactivex.Observer<in T>)
+    private inner class RemoveObserverInMainThread(private val observer: io.reactivex.Observer<in T>)
         : MainThreadDisposable(), Observer<T> {
 
         override fun onChanged(t: T?) {
@@ -49,7 +88,8 @@ private class LiveDataObservable<T>(
                     if (valueIfNull != null) {
                         observer.onNext(valueIfNull)
                     } else {
-                        observer.onError(NullPointerException("asObservable() onNext(t), t cannot be null"))
+                        observer.onError(ReactiveStreamNullElementException(
+                                "convert liveData value t to RxJava onNext(t), t cannot be null"))
                     }
                 } else {
                     observer.onNext(t)
@@ -63,8 +103,32 @@ private class LiveDataObservable<T>(
     }
 }
 
-inline fun <reified T> LiveData<T>.asObservable(): Observable<T> =
-        RxJavaConvert.asObservable(this)
+private class LiveDataCompletable<T>(
+        private val liveData: LiveData<T>,
+        private val allowNull: Boolean = false) : Completable() {
 
-inline fun <reified T> LiveData<T>.asObservableAllowNull(valueIfNull: T): Observable<T> =
-        RxJavaConvert.asObservableAllowNull(this, valueIfNull)
+    override fun subscribeActual(s: CompletableObserver) {
+        val relay = CompleteObserver(s)
+        s.onSubscribe(relay)
+        liveData.observeForever(relay)
+    }
+
+    private inner class CompleteObserver(val s: CompletableObserver)
+        : MainThreadDisposable(), Observer<T> {
+
+        override fun onDispose() {
+            liveData.removeObserver(this)
+        }
+
+        override fun onChanged(t: T?) {
+            if (!isDisposed) {
+                if (t != null || allowNull) {
+                    s.onComplete()
+                } else {
+                    s.onError(ReactiveStreamNullElementException(
+                            "convert liveData value t to RxJava onNext(t), t cannot be null"))
+                }
+            }
+        }
+    }
+}
