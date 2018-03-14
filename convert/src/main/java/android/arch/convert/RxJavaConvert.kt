@@ -128,6 +128,7 @@ private class LiveDataCompletable<T>(
                     s.onError(ReactiveStreamNullElementException(
                             "convert liveData value t to RxJava onNext(t), t cannot be null"))
                 }
+                dispose()
             }
         }
     }

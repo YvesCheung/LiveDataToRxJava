@@ -9,6 +9,7 @@ import io.reactivex.*
 import io.reactivex.android.MainThreadDisposable
 import io.reactivex.functions.Predicate
 import org.reactivestreams.Publisher
+import java.util.concurrent.CancellationException
 
 /**
  * Created by 张宇 on 2018/3/13.
@@ -89,8 +90,14 @@ class LifecycleTransformer<T> internal constructor(
     }
 
     override fun apply(upstream: Completable): CompletableSource {
-        val completableAfterActive = observable.filter { active }.flatMapCompletable { upstream }
-        val completableBeforeInactive = inactive.flatMapCompletable { Completable.complete() }
+        val completableAfterActive = upstream.andThen {
+            if (active) {
+                it.onComplete()
+            } else {
+                it.onError(CancellationException("complete before active"))
+            }
+        }
+        val completableBeforeInactive = inactive.flatMapCompletable { Completable.error(CancellationException()) }
         return Completable.ambArray(completableAfterActive, completableBeforeInactive)
     }
 
