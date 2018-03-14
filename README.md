@@ -4,7 +4,7 @@
 
 LiveDataToRxJava是一个语言扩展库，提供一些可以用于把[LiveData][1]转换成[RxJava][2]的接口。
 
-#使用
+# 使用
 
 ### 直接转换成Reactive接口
 
@@ -56,7 +56,7 @@ val completableWithLife = completable.bindLifecycle(this)
 
 > 绑定生命周期的操作符不仅适用于从 ``LiveData`` 转化而来的 ``Observable`` (或其他 ``Reactive`` 接口）。所以你也可以用这个库来为其他 ``RxJava`` 相关的行为绑定生命周期，比如 ``Retrofit`` 的网络请求，当ui不再活跃的时候可以自动 ``dispose`` 这个网络请求。
 
-#其他细节
+# 其他细节
 
 ### 空值
 
@@ -74,7 +74,7 @@ val flowable = liveData.toFlowableAllowNull(valueIfNull)
 val completable = liveData.toCompletableAllowNull()
 ```
 
-#许可证
+# 许可证
 
        Copyright 2018 Yves Cheung
     
