@@ -78,6 +78,10 @@ val flowable = liveData.toFlowableAllowNull(valueIfNull)
 val completable = liveData.toCompletableAllowNull()
 ```
 
+### Non thread safe
+
+``LiveData`` is non-thread-safe. The main methods, such as ``observe``, ``observeForever``, ``removeObserver``, ``setValue``, all need to be called on the main thread. This means that it is still necessary to subscribe in the main thread after the conversion into the ``Observable`` (or other ``reactive`` interface). This is regrettable but temporarily unavoidable.
+
 ### Values emitted out of the lifecycle
 
 These values will be ignored when ``Flowable`` or ``Observable`` emitts values outside the lifecycle.  But for ``Single``, the only poor value, if ignored, is ``Maybe`` :
