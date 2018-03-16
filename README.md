@@ -2,15 +2,17 @@
 
 ---
 
-LiveDataToRxJava是一个语言扩展库，提供一些接口可以把[LiveData][1]转换成[RxJava][2]。
+LiveDataToRxJava is a language extension library that provides some API for converting [LiveData][1] to [RxJava][2].
 
 [![](https://jitpack.io/v/YvesCheung/LiveDataToRxJava.svg)](https://jitpack.io/#YvesCheung/LiveDataToRxJava)
 
-# 使用
+[中文版README](README_CN.md)
 
-### 直接转换成Reactive接口
+# Usage
 
-通过 kotlin 扩展函数，可以很方便地把 ``LiveData`` 转成 ``RxJava``：
+### Convert to Reactive interface
+
+With the kotlin extension function, you can easily convert ``LiveData`` to ``RxJava``:
 
 ```Kotlin
 val completable = liveData.toCompletable()
@@ -20,7 +22,7 @@ val single = liveData.toSingle()
 val maybe = liveData.toMaybe()
 ```
 
-如果是使用 Java，Api会略微冗长一点：
+If you are using Java, Api will be slightly longer:
 
 ```Java
 MutableLiveData<String> liveData = new MutableLiveData<>();
@@ -32,18 +34,18 @@ Single<String> single = RxJavaConvert.toSingle(liveData);
 Maybe<String> maybe = RxJavaConvert.toMaybe(liveData);
 ```
 
-### 订阅的生命周期
+### Lifecycle
 
-``LiveData`` 可以指定观察的期限在某一个 ``LifecycleOwner`` 的生命周期中。在 Android support-26 以上的包里，常用的 ``Activity`` 和 ``Fragment`` 都已经实现了 ``LifecycleOwner`` 这个接口，所以可以很方便地在 ui 有效的生命周期内使用我们的数据。
+``LiveData`` can specify the period of observation in the lifecycle of a ``LifecycleOwner``. In our applications including Android support-26 library, the commonly used ``Activity`` and ``Fragment`` has implemented the ``LifecycleOwner`` interface, so it can be very convenient to use our data in the lifecycle of UI.
 
-可以通过下面的Api来把 ``LifecycleOwner`` 转换成一个 ``Observable``：
+The following code can be used to convert ``LifecycleOwner`` into a ``Observable``:
 
 ```Kotlin
 //`this` can be an Activity or a Fragment
 val observable: Observable<Lifecycle.Event> = LifecycleConvert.lifecycleObservable(this)
 ```
 
-很多情况下，可以使用下面的Api来让你的可观察对象具有生命周期：
+More often, you can obtain a observable with lifecycle:
 
 ```Kotlin
 //`this` can be an Activity or a Fragment
@@ -54,19 +56,19 @@ val flowableWithLife = flowable.bindLifecycle(this)
 val completableWithLife = completable.bindLifecycle(this)
 ```
 
-``bindLifecycle`` 操作符可以让你的可观察对象具有与 ``LiveData.observe(this,{doSomething})`` 相同的生命周期，也就是从 ``onStart`` 状态到 ``onPause`` 状态。
+The ``bindLifecycle`` operator allows your observable to have the same lifecycle as ``LiveData.observe (this, {doSomething})`` , that is, from ``onStart`` state to ``onPause`` state.
 
-> 绑定生命周期的操作符 **不仅** 适用于从 ``LiveData`` 转化而来的 ``Observable`` (或其他 ``Reactive`` 接口）。所以你也可以用这个库来为其他 ``RxJava`` 相关的行为绑定生命周期，比如 ``Retrofit`` 的网络请求，当 ui 不再活跃的时候可以自动 ``dispose`` 这个网络请求。
+> Binding Lifecycle Operators **Not only** Applies to ``Observable`` (or other ``Reactive`` interfaces) converted from ``LiveData``. So you can also use this library for other ``RxJava`` behavior binding lifecycle, such as ``Retrofit`` network requests, which automatically ``dispose`` those requests when ui is no longer active.
 
-# 其他细节
+# Other details
 
-### 空值
+### Null value
 
-``LiveData`` 与 ``Reactive`` 接口有个很大的差异，就是 ``LiveData`` 允许传递null值，而 ``Reactive`` 规范是不可以的。所以在转换到 ``RxJava`` 的过程中null值就会很尴尬。默认的 ``toObservable`` 等接口在遇到null值时会抛出一个异常。下面是几个我对此的建议：
+There is a difference between ``LiveData`` and ``Reactive`` interface. ``LiveData`` can pass null value, but the ``Reactive`` interface can't. So the null value is awkward while converting to ``RxJava``. The ``toObservable`` operator throws an exception when it encounters a null value. Here are a few of my suggestions for this:
 
-1. 定义一个代表null的常量或对象，在需要传递null值的地方使用该常量或对象。
-2. 使用Java8 Optional类包装
-3. 使用 ``toObservableAllowNull`` 系列的Api
+1. Define a constant or object that represents null, and use it instead.
+2. Use Java8 ``Optional`` to wrap a nullable object.
+3. Use ``toObservableAllowNull`` APIs
 
 ```Kotlin
 val observable = liveData.toObservableAllowNull(valueIfNull)
@@ -76,25 +78,25 @@ val flowable = liveData.toFlowableAllowNull(valueIfNull)
 val completable = liveData.toCompletableAllowNull()
 ```
 
-### 生命周期以外的值传递
+### Values emitted out of the lifecycle
 
-当 ``Flowable`` 或者 ``Observable`` 在生命周期之外期间发射值的时候，这些值会被无视掉。但是对于 ``Single`` 来说，那唯一可怜的值如果被无视掉的话，就相当于是 ``Maybe`` 了：
+These values will be ignored when ``Flowable`` or ``Observable`` emitts values outside the lifecycle.  But for ``Single``, the only poor value, if ignored, is ``Maybe`` :
 
 ```Kotlin
 val maybe = single.bindLifecycle(this)
 ```
 
-而如果还是希望绑定生命周期之后仍然是对 ``Single`` 进行操作，可以这样：
+And if you still want to operate on ``Single``, you can do this:
 
 ```Kotlin
 val singleWithLife = single.bindLifecycleWithError(this)
 ```
 
-在生命周期以外发射值的话，会抛出一个 ``CancellationException`` 。 ``Completable`` 是一样道理的。
+A ``CancellationException`` will be thrown when values are emitted outside the lifecycle. ``Completable`` is the same.
 
-# 配置
+# Download
 
-在项目根目录build.gradle添加：
+Add it in your root build.gradle at the end of repositories:
 ```Groovy
 allprojects {
 	repositories {
@@ -104,14 +106,14 @@ allprojects {
 }
 ```
 
-在需要使用该库的module的build.gradle添加：
+Add the dependency：
 ```Groovy
 dependencies {
 	compile 'com.github.YvesCheung:LiveDataToRxJava:v1.1'
 }
 ```
 
-# 许可证
+# License
 
        Copyright 2018 Yves Cheung
     
