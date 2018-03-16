@@ -76,6 +76,10 @@ val flowable = liveData.toFlowableAllowNull(valueIfNull)
 val completable = liveData.toCompletableAllowNull()
 ```
 
+### 非线程安全
+
+``LiveData`` 是非线程安全的。``observe`` ， ``observeForever`` ， ``removeObserver`` ， ``setValue`` 等主要方法都需要在主线程上调用。这意味着转换成 ``Observable`` 接口之后还是必须在主线程中订阅。这是令人遗憾但暂时无法避免的。
+
 ### 生命周期以外的值传递
 
 当 ``Flowable`` 或者 ``Observable`` 在生命周期之外期间发射值的时候，这些值会被无视掉。但是对于 ``Single`` 来说，那唯一可怜的值如果被无视掉的话，就相当于是 ``Maybe`` 了：
