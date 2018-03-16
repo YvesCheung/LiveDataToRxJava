@@ -96,19 +96,19 @@ val singleWithLife = single.bindLifecycleWithError(this)
 
 在项目根目录build.gradle添加：
 ```Groovy
-	allprojects {
-		repositories {
-			...
-			maven { url 'https://jitpack.io' }
-		}
+allprojects {
+	repositories {
+		...
+		maven { url 'https://jitpack.io' }
 	}
+}
 ```
 
 在需要使用该库的module的build.gradle添加：
 ```Groovy
-	dependencies {
-	        compile 'com.github.YvesCheung:LiveDataToRxJava:v1.1'
-	}
+dependencies {
+	compile 'com.github.YvesCheung:LiveDataToRxJava:v1.1'
+}
 ```
 
 # 许可证
