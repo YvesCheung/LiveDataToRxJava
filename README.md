@@ -6,7 +6,7 @@ LiveDataToRxJava is a language extension library that provides some API for conv
 
 [![](https://jitpack.io/v/YvesCheung/LiveDataToRxJava.svg)](https://jitpack.io/#YvesCheung/LiveDataToRxJava)
 
-[中文版README](README_CN)
+[中文版README](README_CN.md)
 
 # Usage
 
