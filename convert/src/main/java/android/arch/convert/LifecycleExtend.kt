@@ -2,7 +2,7 @@
 
 package android.arch.convert
 
-import android.arch.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleOwner
 import io.reactivex.*
 
 /**

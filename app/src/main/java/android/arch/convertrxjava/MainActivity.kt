@@ -1,10 +1,10 @@
 package android.arch.convertrxjava
 
 import android.arch.convert.*
-import android.arch.lifecycle.MutableLiveData
-import android.arch.lifecycle.Observer
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
 import io.reactivex.functions.Action
 import io.reactivex.functions.Consumer
@@ -29,6 +29,10 @@ class MainActivity : AppCompatActivity() {
         maybe.subscribe(onSucess, onError)
         flowable.subscribe(onSucess, onError)
         completable.subscribe(Action { Log.i(TAG, "its complete") }, onError)
+        LifecycleConvert.lifecycleObservable(this)
+                .subscribe {
+                    Log.e(TAG, it.toString())
+                }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
