@@ -2,10 +2,10 @@ package android.arch.convertrxjava;
 
 import android.arch.convert.LifecycleConvert;
 import android.arch.convert.RxJavaConvert;
-import android.arch.lifecycle.MutableLiveData;
+import androidx.lifecycle.MutableLiveData;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import io.reactivex.Completable;
 import io.reactivex.Flowable;

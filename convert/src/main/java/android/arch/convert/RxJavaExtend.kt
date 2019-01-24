@@ -2,7 +2,7 @@
 
 package android.arch.convert
 
-import android.arch.lifecycle.LiveData
+import androidx.lifecycle.LiveData
 
 /**
  * Created by 张宇 on 2018/3/14.
